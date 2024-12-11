@@ -1,77 +1,114 @@
-import sys
-import time
-import psutil
-import threading
-import platform
-from notification import start_monitoring, stop_monitoring, set_monitoring_interval, set_alert_sound
+import tkinter as tk
+from tkinter import ttk
+from tkinter import PhotoImage 
+import customtkinter as ctk
 
-def display_help():
+def create_command_page(parent):
     """
-    Affiche l'aide pour la ligne de commande.
+    Crée une page avec des icônes dessinées directement dans le code.
     """
-    print("Commande de surveillance des processus")
-    print("Options disponibles:")
-    print("--start          Démarrer la surveillance des processus.")
-    print("--stop           Arrêter la surveillance des processus.")
-    print("--interval <sec> Définir l'intervalle de surveillance en secondes.")
-    print("--sound <sound>  Définir le son des notifications. Options: [Par défaut, Critique, Rappel].")
-    print("--help           Afficher cette aide.")
+    # Couleur de fond principale
+    background_color = "#282C34"
+    frame_background = "#3C4047"
+    text_color = "#FFFFFF"
+    subtext_color = "#CCCCCC"
 
-def check_os():
-    """
-    Vérifie le système d'exploitation et adapte le comportement en fonction de Windows ou Linux.
-    """
-    current_os = platform.system()
-    if current_os == 'Windows':
-        print("Système Windows détecté.")
-        # je vais ajouter des commandes spécifiques à Windows ici si nécessaire, au besoin
-    elif current_os == 'Linux':
-        print("Système Linux détecté.")
-        # je vais ajouter des commandes spécifiques à Linux ici si nécessaire, au besoin
-    else:
-        print(f"Système {current_os} détecté. Certaines fonctionnalités peuvent ne pas être disponibles.")
+    # Titre principal
+    title_label = tk.Label(
+        parent,
+        text="Commandes Personnalisées",
+        font=("Helvetica", 24, "bold"),
+        bg=background_color,
+        fg=text_color
+    )
+    title_label.pack(pady=20)
 
-def process_commands():
-    """
-    Traite les commandes passées en ligne de commande.
-    """
-    if len(sys.argv) < 2:
-        print("Erreur: Aucune commande spécifiée.")
-        display_help()
-        return
+    # Conteneur pour les commandes
+    container = tk.Frame(parent, bg=background_color)
+    container.pack(fill="both", expand=True, padx=20, pady=10)
 
-    command = sys.argv[1]
+    # Style des frames
+    frame_style = {
+        "bg": frame_background,
+        "bd": 2,
+        "relief": "groove",
+        "highlightbackground": "#444",
+        "highlightthickness": 1
+    }
 
-    if command == "--start":
-        print("Démarrage de la surveillance des processus...")
-        start_monitoring()
-    elif command == "--stop":
-        print("Arrêt de la surveillance des processus...")
-        stop_monitoring()
-    elif command == "--interval":
-        if len(sys.argv) > 2:
-            try:
-                interval = int(sys.argv[2])
-                set_monitoring_interval(interval)
-            except ValueError:
-                print("Erreur: L'intervalle doit être un nombre entier.")
-        else:
-            print("Erreur: Veuillez spécifier l'intervalle de surveillance.")
-    elif command == "--sound":
-        if len(sys.argv) > 2:
-            sound_choice = sys.argv[2]
-            if sound_choice in ["Par défaut", "Critique", "Rappel"]:
-                set_alert_sound(sound_choice)
-            else:
-                print("Erreur: Le son spécifié n'est pas valide. Options possibles: [Par défaut, Critique, Rappel].")
-        else:
-            print("Erreur: Veuillez spécifier le son des notifications.")
-    elif command == "--help":
-        display_help()
-    else:
-        print("Commande inconnue.")
-        display_help()
+    # Liste des commandes avec des icônes dessinées
+    commandes = [
+        {"icone": "start", "commande": "--start", "description": "Démarrer la surveillance."},
+        {"icone": "stop", "commande": "--stop", "description": "Arrêter la surveillance."},
+        {"icone": "interval", "commande": "--interval <n>", "description": "Changer l'intervalle de surveillance (en secondes)."},
+        {"icone": "help", "commande": "--help", "description": "Afficher l'aide pour les commandes disponibles."},
+        {"icone": "sound", "commande": "--sound <son>", "description": "Définir un son personnalisé pour les alertes."}
+    ]
 
+    # Ajouter des frames pour chaque commande
+    for cmd in commandes:
+        frame = tk.Frame(container, **frame_style)
+        frame.pack(fill="x", pady=10, padx=10)
+
+        # Canvas pour dessiner l'icône
+        icon_canvas = tk.Canvas(frame, width=50, height=50, bg=frame_background, highlightthickness=0)
+        icon_canvas.pack(side="left", padx=10, pady=10)
+
+        # Dessiner l'icône en fonction du type
+        if cmd["icone"] == "start":
+            icon_canvas.create_polygon(10, 10, 40, 25, 10, 40, fill="#4CAF50", outline="")
+        elif cmd["icone"] == "stop":
+            icon_canvas.create_rectangle(10, 10, 40, 40, fill="#F44336", outline="")
+        elif cmd["icone"] == "interval":
+            icon_canvas.create_line(10, 25, 40, 25, fill="#2196F3", width=3)
+            icon_canvas.create_oval(15, 20, 20, 30, fill="#2196F3", outline="")
+            icon_canvas.create_oval(30, 20, 35, 30, fill="#2196F3", outline="")
+        elif cmd["icone"] == "help":
+            icon_canvas.create_oval(10, 10, 40, 40, fill="#FFC107", outline="")
+            icon_canvas.create_text(25, 25, text="?", fill="black", font=("Helvetica", 20, "bold"))
+        elif cmd["icone"] == "sound":
+            icon_canvas.create_rectangle(10, 15, 20, 35, fill="#9C27B0", outline="")
+            icon_canvas.create_polygon(20, 15, 40, 25, 20, 35, fill="#9C27B0", outline="")
+
+        # Texte descriptif
+        text_frame = tk.Frame(frame, bg=frame_background)
+        text_frame.pack(side="left", fill="both", expand=True, padx=10)
+
+        command_label = tk.Label(
+            text_frame,
+            text=cmd["commande"],
+            font=("Helvetica", 14, "bold"),
+            bg=frame_background,
+            fg=text_color
+        )
+        command_label.pack(anchor="w")
+
+        description_label = tk.Label(
+            text_frame,
+            text=cmd["description"],
+            font=("Helvetica", 12),
+            bg=frame_background,
+            fg=subtext_color
+        )
+        description_label.pack(anchor="w")
+
+    
+    
+    # Ajout de l'image
+    image_path = "C:/Users/ELITEBOOK/Desktop/ProjetLinux/assets/images/c5.png"  # Chemin vers l'image
+    try:
+        photo = tk.PhotoImage(file=image_path)
+        image_label = ctk.CTkLabel(container, image=photo, text="")
+        image_label.image = photo  # Référence pour éviter le garbage collection
+        image_label.pack(pady=(20, 10))  # Ajout d'un padding
+    except Exception as e:
+        print(f"Erreur lors du chargement de l'image : {e}")
+   
+# Tester la page
 if __name__ == "__main__":
-    check_os()
-    process_commands()
+    root = tk.Tk()
+    root.title("Icônes Dessinées")
+    root.geometry("800x600")
+    root.configure(bg="#282C34")
+    create_command_page(root)
+    root.mainloop()

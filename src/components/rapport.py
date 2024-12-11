@@ -5,8 +5,7 @@ import subprocess
 
 def create_report_page(parent):
     """
-    Crée une page rapport avec une image et un bouton dans une frame centralisée
-    à droite de la barre latérale, et un pied de page stylisé.
+    Crée une page rapport stylisée.
     """
     # Cadre principal (page complète)
     report_frame = ctk.CTkFrame(parent, corner_radius=15, fg_color="#2E2E2E")

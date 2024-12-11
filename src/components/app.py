@@ -4,6 +4,7 @@ from sidebar import create_sidebar
 from graph import create_visualisation_page
 from notification import create_notification_page
 from rapport import create_report_page
+from commande import create_command_page
 from PIL import Image
 
 # Initialisation de l'application
@@ -29,10 +30,8 @@ def show_frame(frame_name):
     else:
         print(f"Erreur : la frame '{frame_name}' n'existe pas.")
 
+# Ajout dans le callback pour gérer la navigation
 def display_section_callback(section_name, options=None):
-    """
-    Callback pour afficher une section en fonction du nom sélectionné.
-    """
     if section_name == "Base":
         show_frame("base")
     elif section_name == "Visualisation":
@@ -41,6 +40,9 @@ def display_section_callback(section_name, options=None):
         show_frame("notifications")
     elif section_name == "Rapports":
         show_frame("rapport")
+    elif section_name == "Mode Commande":
+        show_frame("commandes")
+        
     else:
         print(f"Erreur : section '{section_name}' inconnue.")
 
@@ -78,6 +80,12 @@ frames["notifications"] = notification_frame
 # Frame pour la page "Rapports"
 rapport_frame = create_report_page(main_frame)
 frames["rapport"] = rapport_frame
+
+# Frame pour la page "Commandes"
+command_frame = ctk.CTkFrame(main_frame, corner_radius=15)
+create_command_page(command_frame)  # Ajouter le contenu à la frame
+frames["commandes"] = command_frame
+
 
 # Afficher la page "Base" par défaut
 show_frame("base")

@@ -32,8 +32,8 @@ def create_real_time_process_display(parent):
             for row in process_table.get_children():
                 process_table.delete(row)
 
-            # Récupérer les processus
-            processes = [
+            # Récupérer les processus   "liste par compréhension"
+            processes = [                                       
                 (
                     proc.pid,
                     proc.info.get("name", "N/A"),

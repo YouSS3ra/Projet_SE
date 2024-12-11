@@ -1,189 +1,195 @@
+import os
+import subprocess
 import customtkinter as ctk
-from tkinter import ttk
-import psutil
-import threading
-import time
-
-def create_real_time_process_display(parent):
-    # Conteneur principal
-    process_frame = ctk.CTkFrame(parent, fg_color="#2b2b2b", corner_radius=10)
-    process_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-    # Table des processus
-    columns = ["ID", "Nom", "CPU (%)", "RAM (%)"]
-    process_table = ttk.Treeview(process_frame, columns=columns, show="headings", height=15)
-    process_table.pack(fill="both", expand=True, padx=10, pady=50)
-
-    # Style pour améliorer l'apparence
-    style = ttk.Style()
-    style.theme_use("clam")
-    style.configure("Treeview", background="#333333", foreground="white", fieldbackground="#333333", rowheight=25)
-    style.configure("Treeview.Heading", background="#444444", foreground="white", font=("Arial", 12, "bold"))
-
-    # Définir les colonnes
-    for col in columns:
-        process_table.heading(col, text=col)
-        process_table.column(col, anchor="center", stretch=True)
-
-    # Fonction pour mettre à jour les processus
-    def update_process_table():
-        while True:
-            # Effacer l'ancien contenu
-            for row in process_table.get_children():
-                process_table.delete(row)
-
-            # Récupérer les processus
-            processes = [
-                (
-                    proc.pid,
-                    proc.info.get("name", "N/A"),
-                    f"{proc.info['cpu_percent']:.1f}",
-                    f"{proc.info['memory_percent']:.1f}"
-                )
-                for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent'])
-            ]
-
-            # Ajouter les processus à la table
-            for proc in processes:
-                process_table.insert("", "end", values=proc)
-
-            time.sleep(1)
-
-    # Thread pour la mise à jour des données
-    threading.Thread(target=update_process_table, daemon=True).start()
-
-    # Cadres CPU et RAM
-    stats_frame = ctk.CTkFrame(process_frame, fg_color="#444444", corner_radius=10)
-    stats_frame.pack(fill="x", pady=20)
-
-    # CPU Frame
-    cpu_frame = ctk.CTkFrame(stats_frame, width=400, height=100, fg_color="#222222", corner_radius=10)
-    cpu_frame.pack(side="left", padx=20, pady=10)
-
-    cpu_label = ctk.CTkLabel(cpu_frame, text="Consommation CPU", font=("Arial", 12, "bold"))
-    cpu_label.pack(side="bottom", pady=5)
-
-    cpu_usage_label = ctk.CTkLabel(cpu_frame, text="0%", font=("Forte", 25, "bold"), text_color="#799351")
-    cpu_usage_label.pack(expand=True)
-
-    # RAM Frame
-    ram_frame = ctk.CTkFrame(stats_frame, width=400, height=100, fg_color="#222222", corner_radius=10)
-    ram_frame.pack(side="left", padx=20, pady=10)
-
-    ram_label = ctk.CTkLabel(ram_frame, text="Consommation RAM", font=("Arial", 12, "bold"))
-    ram_label.pack(side="bottom", pady=5)
-
-    ram_usage_label = ctk.CTkLabel(ram_frame, text="0%", font=("Forte", 25, "bold"), text_color="#1572A1")
-    ram_usage_label.pack(expand=True)
-
-    # Fonction pour mettre à jour les statistiques CPU/RAM
-    def update_stats():
-        while True:
-            cpu_usage = psutil.cpu_percent(interval=1)
-            ram_usage = psutil.virtual_memory().percent
-
-            cpu_usage_label.configure(text=f"{cpu_usage}%")
-            ram_usage_label.configure(text=f"{ram_usage}%")
-
-    # Thread pour la mise à jour des stats
-    threading.Thread(target=update_stats, daemon=True).start()
+from tkinter import messagebox
 
 
-
-
+def create_command_page(parent):
     """
-    import customtkinter as ctk
-from tkinter import ttk
-import psutil
-import threading
-import time
+    Crée la page des commandes avec un design moderne et stylisé.
+    """
+    # Cadre principal pour la page des commandes
+    command_frame = ctk.CTkFrame(parent, fg_color="#1E1E2E")
 
-def create_real_time_process_display(parent):
-    # Conteneur principal
-    process_frame = ctk.CTkFrame(parent, fg_color="#2b2b2b", corner_radius=10)
-    process_frame.pack(fill="both", expand=True, padx=10, pady=10)
+    # Titre de la page
+    title = ctk.CTkLabel(
+        command_frame,
+        text="Page des Commandes",
+        font=("Forte", 30,'bold'),
+        text_color="#FFFFFF"
+    )
+    title.pack(pady=(20, 10))
 
-    # Table des processus
-    columns = ["ID", "Nom", "CPU (%)", "RAM (%)"]
-    process_table = ttk.Treeview(process_frame, columns=columns, show="headings", height=15)
-    process_table.pack(fill="both", expand=True, padx=10, pady=50)
+    # Description
+    description = ctk.CTkLabel(
+        command_frame,
+        text="Voici les commandes disponibles :",
+        font=("Forte", 16),
+        text_color="#A9A9A9"
+    )
+    description.pack(pady=(0, 20))
 
-    # Style pour améliorer l'apparence
-    style = ttk.Style()
-    style.theme_use("clam")
-    style.configure("Treeview", background="#333333", foreground="white", fieldbackground="#333333", rowheight=25)
-    style.configure("Treeview.Heading", background="#444444", foreground="white", font=("Arial", 12, "bold"))
+    # Simulation de l'exécution des commandes
+    def execute_command(command, title):
+        """
+        Crée une fenêtre pop-up moderne pour afficher les résultats des commandes,
+        en incluant la commande concernée.
+        """
+        popup = ctk.CTkToplevel(parent)
+        popup.title(title)
+        popup.geometry("500x350")
+        popup.transient(parent)
+        popup.resizable(False, False)
+        popup.configure(fg_color="#1E1E2E", border_width=2, border_color="#5A5A8C")
+        popup.focus_force()
 
-    # Définir les colonnes
-    for col in columns:
-        process_table.heading(col, text=col)
-        process_table.column(col, anchor="center", stretch=True)
+        # Titre de la fenêtre
+        popup_title = ctk.CTkLabel(
+            popup,
+            text=title,
+            font=("Forte", 20, "bold"),
+            text_color="#FFFFFF",
+            fg_color="#2E2E4E",
+            corner_radius=8,
+            height=50,
+            width=480,
+            anchor="center"
+        )
+        popup_title.pack(pady=(10, 5), padx=10)
 
-    # Fonction pour mettre à jour les processus
-    def update_process_table():
-        # Effacer l'ancien contenu
-        for row in process_table.get_children():
-            process_table.delete(row)
+        # Affichage de la commande concernée
+        command_label = ctk.CTkLabel(
+            popup,
+            text=f"Commande exécutée : {command}",
+            font=("Forte", 14),
+            text_color="#FFD700",
+            wraplength=460,
+            justify="center"
+        )
+        command_label.pack(pady=(10, 5))
 
-        # Récupérer les processus
-        processes = [
-            (
-                proc.pid,
-                proc.info.get("name", "N/A"),
-                f"{proc.info['cpu_percent']:.1f}",
-                f"{proc.info['memory_percent']:.1f}"
+        # Corps de la fenêtre
+        body_frame = ctk.CTkFrame(
+            popup,
+            fg_color="#2E2E4E",
+            border_color="#6A6AFF",
+            border_width=2,
+            corner_radius=10,
+            width=460,
+            height=180
+        )
+        body_frame.pack(pady=10, padx=20, fill="both", expand=True)
+
+        try:
+            # Exécution de la commande réelle
+            if command == "--start":
+                # Commencer une tâche de surveillance (exemple)
+                result = "Surveillance démarrée avec succès."
+                subprocess.Popen(["gnome-terminal", "-e", "top"])  # Ouvrir un terminal avec 'top'
+            elif command == "--stop":
+                # Arrêter une tâche de surveillance (exemple)
+                result = "Surveillance arrêtée."
+                subprocess.call(["pkill", "top"])  # Arrêter le processus 'top'
+            elif command == "--list-processes":
+                result = "Liste des processus simulée avec succès !"
+                subprocess.Popen(["gnome-terminal", "-e", "ps aux"])  # Afficher les processus en cours
+            elif command == "--help":
+                result = "Voici une aide détaillée sur les commandes disponibles."
+            else:
+                result = f"Commande '{command}' exécutée avec succès !"
+
+            result_label = ctk.CTkLabel(
+                body_frame,
+                text=result,
+                font=("Helvetica", 14),
+                text_color="#FFFFFF",
+                wraplength=400,
+                anchor="center",
+                justify="center"
             )
-            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent'])
-        ]
+            result_label.pack(pady=10, padx=10)
+        except Exception as e:
+            error_label = ctk.CTkLabel(
+                body_frame,
+                text=f"Erreur : {e}",
+                font=("Forte", 14),
+                text_color="red",
+                wraplength=400,
+                anchor="center",
+                justify="center"
+            )
+            error_label.pack(pady=10, padx=10)
 
-        # Ajouter les processus à la table
-        for proc in processes:
-            process_table.insert("", "end", values=proc)
+        # Bouton Fermer
+        close_button = ctk.CTkButton(
+            popup,
+            text="Fermer",
+            font=("Helvetica", 14),
+            fg_color="#CC3F3F",
+            hover_color="#A32A2A",
+            text_color="#FFFFFF",
+            corner_radius=10,
+            height=40,
+            width=200,
+            command=popup.destroy
+        )
+        close_button.pack(pady=10)
 
-        # Planifier la mise à jour après 500 ms pour un changement plus rapide
-        process_table.after(500, update_process_table)
-        
-    # Cadres CPU et RAM
-    stats_frame = ctk.CTkFrame(process_frame, fg_color="#444444", corner_radius=10)
-    stats_frame.pack(fill="x", pady=20)
+        # Animation d'apparition
+        popup.attributes("-alpha", 0.0)  # Initialement transparent
+        for i in range(1, 11):
+            popup.update()
+            popup.attributes("-alpha", i / 10)  # Graduellement opaque
 
-    # CPU Frame
-    cpu_frame = ctk.CTkFrame(stats_frame, width=400, height=100, fg_color="#222222", corner_radius=10)
-    cpu_frame.pack(side="left", padx=20, pady=10)
+    # Liste des commandes disponibles
+    commands = [
+        ("Démarrer la surveillance", "--start"),
+        ("Arrêter la surveillance", "--stop"),
+        ("Définir l'intervalle (5s)", "--interval 5"),
+        ("Définir le son Critique", "--sound Critique"),
+        ("Afficher les processus", "--list-processes"),
+        ("Afficher l'aide", "--help"),
+    ]
 
-    cpu_label = ctk.CTkLabel(cpu_frame, text="Consommation CPU", font=("Arial", 12, "bold"))
-    cpu_label.pack(side="bottom", pady=5)
+    # Ajout des boutons pour les commandes
+    for text, command in commands:
+        btn = ctk.CTkButton(
+            command_frame,
+            text=text,
+            command=lambda c=command: execute_command(c, text),
+            fg_color="#007ACC",
+            hover_color="#005A99",
+            text_color="#FFFFFF",
+            font=("Helvetica", 14),
+            corner_radius=15
+        )
+        btn.pack(fill="x", pady=10, padx=20)
 
-    cpu_usage_label = ctk.CTkLabel(cpu_frame, text="0%", font=("Forte", 25, "bold"), text_color="#799351")
-    cpu_usage_label.pack(expand=True)
+    # Bouton pour ouvrir le terminal
+    def open_cmd():
+        """
+        Ouvre le terminal CMD (Windows) ou par défaut (Linux).
+        """
+        try:
+            if os.name == 'nt':  # Windows
+                os.system('start cmd')
+            elif os.name == 'posix':  # Linux
+                subprocess.call(['gnome-terminal'])
+            else:
+                messagebox.showerror("Erreur", "Terminal non pris en charge sur ce système.")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir le terminal : {e}")
 
-    # RAM Frame
-    ram_frame = ctk.CTkFrame(stats_frame, width=400, height=100, fg_color="#222222", corner_radius=10)
-    ram_frame.pack(side="left", padx=20, pady=10)
+    cmd_button = ctk.CTkButton(
+        command_frame,
+        text="Ouvrir Terminal",
+        command=open_cmd,
+        fg_color="#28A745",
+        hover_color="#218838",
+        text_color="#FFFFFF",
+        font=("Forte", 14),
+        corner_radius=15
+    )
+    cmd_button.pack(pady=20, padx=20)
 
-    ram_label = ctk.CTkLabel(ram_frame, text="Consommation RAM", font=("Arial", 12, "bold"))
-    ram_label.pack(side="bottom", pady=5)
-
-    ram_usage_label = ctk.CTkLabel(ram_frame, text="0%", font=("Forte", 25, "bold"), text_color="#1572A1")
-    ram_usage_label.pack(expand=True)
-
-    # Fonction pour mettre à jour les statistiques CPU/RAM
-    def update_stats():
-        cpu_usage = psutil.cpu_percent(interval=0.5)  # Réduction de l'intervalle pour plus de fluidité
-        ram_usage = psutil.virtual_memory().percent
-
-        print(f"CPU Usage: {cpu_usage}% | RAM Usage: {ram_usage}%")  # Débogage
-
-        cpu_usage_label.configure(text=f"{cpu_usage}%")
-        ram_usage_label.configure(text=f"{ram_usage}%")
-
-        # Planifier la mise à jour après 500 ms pour plus de fluidité
-        cpu_usage_label.after(1000, update_stats)
-        
-
-    # Appeler les fonctions initiales
-    update_process_table()
-    update_stats()
-
-    
-    """
+    return command_frame

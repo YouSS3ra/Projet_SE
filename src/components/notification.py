@@ -1,19 +1,23 @@
 import time
 import psutil
 from winotify import Notification, audio
+import winsound
 import threading
 import tkinter.messagebox as messagebox
 import customtkinter as ctk
 from tkinter import PhotoImage  # Utiliser PhotoImage de tkinter
 
+import platform
+import subprocess
+
 # Seuils de surveillance
-INACTIVE_THRESHOLD = 300  # Temps d'inactivité en secondes (5 minutes)
+INACTIVE_THRESHOLD = 300  # Temps d'inactivité d'un processus en secondes (5 minutes)
 CPU_USAGE_THRESHOLD = 5  # Pourcentage d'utilisation CPU
 MEMORY_USAGE_THRESHOLD = 50  # Mémoire utilisée en Mo
 
 # Variables globales
 is_monitoring = False
-MONITORING_INTERVAL = 10  # Intervalle par défaut en secondes
+MONITORING_INTERVAL = 5  # Intervalle par défaut en secondes
 ALERT_SOUND = audio.Default  # Son d'alerte par défaut
 
 def notify_user(process_name, pid):
@@ -56,12 +60,14 @@ def monitor_processes():
     print("Démarrage de la surveillance des processus...")
     while is_monitoring:
         for process in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info', 'create_time']):
+            if not is_monitoring:
+                break  # Quitter la boucle si la surveillance est arrêtée
             try:
                 # Récupération des informations du processus
                 pid = process.info['pid']
                 name = process.info['name']
                 cpu_percent = process.info['cpu_percent']
-                memory_used = process.info['memory_info'].rss / (1024 * 1024)  # Convertir en Mo
+                memory_used = process.info['memory_info'].rss / (1024 * 1024)  # Convertir le octet en Mo
                 create_time = process.info['create_time']
 
                 # Temps depuis la création du processus
@@ -70,6 +76,7 @@ def monitor_processes():
                 # Vérification des critères d'inactivité
                 if elapsed_time > INACTIVE_THRESHOLD and cpu_percent < CPU_USAGE_THRESHOLD and memory_used > MEMORY_USAGE_THRESHOLD:
                     print(f"Processus '{name}' (PID: {pid}) identifié comme inactif.")
+                    # Appel de la fonction de notification
                     notify_user(name, pid)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
@@ -78,6 +85,7 @@ def monitor_processes():
         time.sleep(MONITORING_INTERVAL)
 
     print("Surveillance arrêtée.")
+
 
 def set_monitoring_interval(interval):
     """
@@ -90,22 +98,23 @@ def set_monitoring_interval(interval):
     except ValueError:
         print("Erreur : Intervalle invalide. Veuillez entrer un nombre entier.")
 
-def set_alert_sound(sound_choice):
+def set_alert_sound(sound_choice ):
     """
     Change le son des notifications en fonction du choix.
     """
     global ALERT_SOUND
     if sound_choice == "Par défaut":
-        ALERT_SOUND = audio.Default
-    elif sound_choice == "Critique":
-        ALERT_SOUND = audio.Critical
+        ALERT_SOUND = "default.wav"  # Remplacez par un chemin vers un fichier audio
+    elif sound_choice == "Critique":        
+         ALERT_SOUND = "critical.wav"
     elif sound_choice == "Rappel":
-        ALERT_SOUND = audio.Reminder
+        ALERT_SOUND = "reminder.wav"
     else:
         print("Choix de son invalide. Son par défaut sélectionné.")
-        ALERT_SOUND = audio.Default
+        ALERT_SOUND = "default.wav"
     print(f"Son de notification mis à jour à {ALERT_SOUND}.")
-
+     
+    
 def start_monitoring():
     """
     Démarre la surveillance dans un thread séparé.
@@ -123,108 +132,6 @@ def stop_monitoring():
     """
     Arrête la surveillance.
     """
-    global is_monitoring
-    if is_monitoring:
-        is_monitoring = False
-        messagebox.showinfo("Surveillance", "La surveillance des processus a été arrêtée.")
-    else:
-        messagebox.showinfo("Surveillance", "La surveillance n'est pas en cours.")
-
-
-import platform
-import subprocess
-
-def notify_user(process_name, pid):
-    os_name = platform.system()
-    message = f"Le processus '{process_name}' (PID: {pid}) est inactif et consomme des ressources."
-    if os_name == "Windows":
-        # Windows : utiliser winotify
-        try:
-            toast = Notification(
-                app_id="Surveillance Processus",
-                title="Alerte : Processus Inactif",
-                msg=message,
-                duration="long"
-            )
-            toast.set_audio(ALERT_SOUND, loop=False)
-            toast.show()
-        except Exception as e:
-            print(f"Erreur de notification sur Windows : {e}")
-    elif os_name == "Linux":
-        # Linux : utiliser notify-send
-        try:
-            subprocess.run(["notify-send", "Alerte : Processus Inactif", message])
-        except Exception as e:
-            print(f"Erreur de notification sur Linux : {e}")
-    else:
-        print("Système non supporté pour les notifications.")
-
-def stop_process(pid):
-    try:
-        process = psutil.Process(pid)
-        if process.username() != "root":  # Vérification pour éviter les processus système critiques
-            process.terminate()
-            print(f"Processus {pid} arrêté avec succès.")
-        else:
-            print(f"Impossible d'arrêter le processus {pid} (droits root nécessaires).")
-    except psutil.NoSuchProcess:
-        print(f"Processus {pid} introuvable.")
-    except Exception as e:
-        print(f"Erreur lors de l'arrêt du processus {pid} : {e}")
-
-def monitor_processes():
-    global is_monitoring
-    print("Démarrage de la surveillance des processus...")
-    while is_monitoring:
-        for process in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info', 'create_time']):
-            try:
-                pid = process.info['pid']
-                name = process.info['name']
-                cpu_percent = process.info['cpu_percent']
-                memory_used = process.info['memory_info'].rss / (1024 * 1024)  # Convertir en Mo
-                create_time = process.info['create_time']
-                elapsed_time = time.time() - create_time
-
-                if elapsed_time > INACTIVE_THRESHOLD and cpu_percent < CPU_USAGE_THRESHOLD and memory_used > MEMORY_USAGE_THRESHOLD:
-                    print(f"Processus '{name}' (PID: {pid}) identifié comme inactif.")
-                    notify_user(name, pid)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        time.sleep(MONITORING_INTERVAL)
-    print("Surveillance arrêtée.")
-
-def set_monitoring_interval(interval):
-    global MONITORING_INTERVAL
-    try:
-        MONITORING_INTERVAL = max(1, int(interval))  # Minimum 1 seconde
-        print(f"Intervalle de surveillance mis à jour à {MONITORING_INTERVAL} secondes.")
-    except ValueError:
-        print("Erreur : Intervalle invalide. Veuillez entrer un nombre entier.")
-
-def set_alert_sound(sound_choice):
-    global ALERT_SOUND
-    if sound_choice == "Par défaut":
-        ALERT_SOUND = audio.Default
-    elif sound_choice == "Critique":
-        ALERT_SOUND = audio.Critical
-    elif sound_choice == "Rappel":
-        ALERT_SOUND = audio.Reminder
-    else:
-        print("Choix de son invalide. Son par défaut sélectionné.")
-        ALERT_SOUND = audio.Default
-    print(f"Son de notification mis à jour à {ALERT_SOUND}.")
-
-def start_monitoring():
-    global is_monitoring
-    if not is_monitoring:
-        is_monitoring = True
-        monitoring_thread = threading.Thread(target=monitor_processes, daemon=True)
-        monitoring_thread.start()
-        messagebox.showinfo("Surveillance", "La surveillance des processus a démarré.")
-    else:
-        messagebox.showinfo("Surveillance", "La surveillance est déjà en cours.")
-
-def stop_monitoring():
     global is_monitoring
     if is_monitoring:
         is_monitoring = False
